@@ -2,39 +2,41 @@ import PaddleClient from "@/lib/paddleClient";
 import { BoathouseApi } from "../../lib/boathouseApi";
 import { cookies } from "next/headers";
 import InnerHTML from "dangerously-set-html-content";
+import LogoutButton from "./LogoutButton";
 
 export default async function Home() {
   // Server Action
   async function getData() {
     ("use server");
 
-    var returnUrl = `http://localhost:3000/account`;
-
-    var paddleCustomerId = cookies().get("PaddleCustomerID")?.value;
+    var returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/account`;
+    var userEmail = cookies().get("userEmail")?.value;
 
     const boathouse = await new BoathouseApi().getBoathouseResponse(
+      userEmail,
       null,
-      paddleCustomerId,
       returnUrl
     );
 
     return {
-      paddleCustomerId,
+      userEmail,
       boathouse,
     };
   }
 
   var d = await getData();
-  const { paddleCustomerId, boathouse } = d;
+  const { userEmail, boathouse } = d;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="flex flex-col items-start w-full max-w-5xl flex-1 py-24 gap-6">
-        <h1 className="text-xl font-bold">Account Page</h1>
+        <div className="flex justify-between items-center w-full">
+          <h1 className="text-xl font-bold">Account Page</h1>
+          <LogoutButton />
+        </div>
 
         <p>
-          You are logged in to this application as Paddle Customer ID{" "}
-          <b>{paddleCustomerId}</b>.
+          You are logged in to this application with email: <b>{userEmail}</b>.
         </p>
 
         <p>This is the return value from the Boathouse API:</p>
@@ -42,7 +44,7 @@ export default async function Home() {
           <pre>{JSON.stringify(boathouse, null, 2)}</pre>
         </div>
 
-        {boathouse.activeSubscriptions.length == 0 ? (
+        {boathouse?.activeSubscriptions?.length === 0 ? (
           <>
             <div className="font-bold">
               This is the pricing table that Boathouse generates for you from
